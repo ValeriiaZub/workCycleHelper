@@ -1,0 +1,513 @@
+<!-- <!DOCTYPE html>
+<html lang="">
+
+<head>
+    <meta charset="UTF-8">
+    <title>IXD_web2feather_2buttons</title>
+    <script language="javascript" type="text/javascript" src="sketch.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Source+Serif+Pro" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+    <script src="sketch.js"></script>
+</head>
+
+<body>
+
+
+
+</body>
+
+</html>
+
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <title>Example</title>
+    <style>
+        .middle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -50px;
+            margin-left: -300px;
+            width: 600px;
+            height: 100px;
+            display: none;
+            text-align: center;
+            z-index: 1;
+        }
+
+        canvas {
+            z-index: 0;
+            overflow: hidden;
+
+        }
+
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- State 0 -->
+    <div id="s0" class="middle">
+        <h1>Your perfect work cycle helper </h1>
+        <p> Cycle period: 30 minutes work & 5 minutes rest</p>
+        <button type="button" class="btn btn-success" id="s0--t">Start cycle</button>
+    </div>
+
+    <!-- State 1 -->
+    <div id="s1" class="middle">
+        <p>this is your current cycle </p>
+        <p id="s1--clock"></p>
+        <button type="button" class="btn btn-danger" id="s1--s"> Stop cycle </button>
+        <button id="s1--t" type="button" class="btn btn-warning">Pause cycle</button>
+    </div>
+
+
+    <!-- State 2 -->
+    <div id="s2" class="middle">
+        <p>You have paused your current cycle</p>
+        <button type="button" class="btn btn-danger" id="s2--s"> Stop cycle </button>
+        <button id="s2--t" type="button" class="btn btn-success">Resume</button>
+    </div>
+    <!-- State 3 -->
+    <div id="s3" class="middle">
+        <p>It's your beak time! Time to stand up!</p>
+        <button type="button" class="btn btn-danger" id="s3--s"> Stop cycle </button>
+        <button id="s3--t" type="button" class="btn btn-warning">Pause cycle</button>
+    </div>
+
+    <!-- State 4 -->
+    <div id="s4" class="middle">
+        <p>We have stopped your cycle. Seems like you are not at your computer. Try moving in closer to the sensor</p>
+        <button type="button" class="btn btn-danger" id="s4--s"> Reset cycle </button>
+        <button id="s4--t" type="button" class="btn btn-success">Resume working</button>
+    </div>
+
+    <!-- State 5 -->
+    <div id="s5" class="middle">
+        <p>Just a reminder to stand up! We have stopped your rest time until you stand up</p>
+        <button type="button" class="btn btn-danger" id="s5--s"> Reset cycle </button>
+        <button id="s5--t" type="button" class="btn btn-success">I've stood up</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.6.0/dist/umd/popper.min.js"
+        integrity="sha384-KsvD1yqQ1/1+IA7gi3P0tyJcT3vR+NdBTt13hSJ2lnve8agRGXTTyNaBYmCR/Nwi" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"
+        integrity="sha384-nsg8ua9HAw1y0W1btsyWgBklPnCUAFLuTMS2G72MMONqmOymq585AcH49TLBQObG" crossorigin="anonymous">
+    </script>
+    <script>
+        class State {
+
+            constructor(id) {
+                this.block = document.getElementById(id);
+            }
+
+            show() {
+                this.block.style.display = "block";
+            }
+
+            hide() {
+                this.block.style.display = "none";
+            }
+
+            update(delta) {}
+        }
+
+        class StartState extends State {
+            constructor(manager) {
+                super("s0");
+                this.manager = manager;
+                this.btn = document.getElementById("s0--t");
+
+            }
+
+            transition = () => {
+                this.manager.push(new WorkoutState(this.manager, WORKOUT_MIN, WORKOUT_SEC))
+            }
+
+            show() {
+                this.btn.addEventListener("click", this.transition);
+                super.show();
+            }
+
+            hide() {
+                this.btn.removeEventListener("click", this.transition);
+                super.hide();
+            }
+        }
+        class WorkoutState extends State {
+            constructor(manager, minutes, seconds) {
+                super("s1");
+                this.manager = manager;
+                this.btn = document.getElementById("s1--t");
+                this.btn2 = document.getElementById("s1--s");
+                this.minutes = minutes;
+                this.seconds = seconds;
+                this.timerId = undefined;
+            }
+            reset = () => {
+                this.manager.pop();
+            }
+
+            pause = () => {
+                this.manager.push(new PauseState(this.manager))
+            }
+
+            getDistance = async () => {
+                let distance = await getData();
+                console.log(distance);
+                if (distance > 100) {
+                    this.manager.push(new ComeBackToDeskState(manager, this.minutes, this.seconds));
+                }
+            }
+
+            show() {
+                this.btn.addEventListener("click", this.pause);
+                this.btn2.addEventListener("click", this.reset);
+                this.timerId = window.setInterval(this.getDistance, 2000);
+                super.show();
+                sendData2(true);
+            }
+
+            hide() {
+                this.btn.removeEventListener("click", this.pause);
+                this.btn2.removeEventListener("click", this.reset);
+                window.clearInterval(this.timerId);
+                super.hide();
+                sendData2(false);
+            }
+
+            update(delta) {
+                text(this.minutes + ":" + this.seconds, width / 2, (height / 2) - 100);
+                if (frameCount % 60 == 0 && this.seconds > 0) {
+                    // if the frameCount is divisible by 60, then a second has passed. it will stop at 0
+                    this.seconds--;
+                }
+                if (this.seconds == 0 && this.minutes > 0) {
+                    this.minutes--;
+                    this.seconds = 59;
+                }
+                if (this.seconds == 0 && this.minutes == 0) {
+                    this.manager.popAndPush(new RestState(this.manager, REST_MIN, REST_SEC));
+                    this.minutes = WORKOUT_MIN;
+                    this.seconds = WORKOUT_SEC;
+                }
+            }
+        }
+        class ComeBackToDeskState extends State {
+
+            constructor(manager, minutes, seconds) {
+                super("s4");
+                this.manager = manager;
+                this.btn = document.getElementById("s4--t");
+                this.btn2 = document.getElementById("s4--s");
+                this.minutes = minutes;
+                this.seconds = seconds;
+                this.timerId = undefined;
+
+            }
+
+            transition = () => {
+                this.manager.pop();
+            }
+
+            reset = () => {
+                this.manager.pop();
+                this.manager.pop();
+                this.manager.pop();
+            }
+
+            getDistance = async () => {
+                let distance = await getData();
+                console.log(distance);
+                if (distance < 75) {
+                    this.manager.pop();
+                }
+            }
+
+            show() {
+                this.btn.addEventListener("click", this.transition);
+                this.btn2.addEventListener("click", this.reset);
+                this.timerId = window.setInterval(this.getDistance, 2000);
+                super.show();
+            }
+
+            hide() {
+                this.btn.removeEventListener("click", this.transition);
+                this.btn2.removeEventListener("click", this.reset);
+                window.clearInterval(this.timerId);
+                super.hide();
+            }
+
+            update(delta) {
+                text(this.minutes + ":" + this.seconds, width / 2, (height / 2) - 100);
+            }
+        }
+        class TimeToStandUpState extends State {
+            constructor(manager, minutes, seconds) {
+                super("s5");
+                this.manager = manager;
+                this.btn = document.getElementById("s5--t");
+                this.btn2 = document.getElementById("s5--s");
+                this.minutes = minutes;
+                this.seconds = seconds;
+                this.timerId = undefined;
+
+            }
+
+            transition = () => {
+                this.manager.pop();
+            }
+
+            reset = () => {
+                this.manager.pop();
+                this.manager.pop();
+            }
+
+            getDistance = async () => {
+                let distance = await getData();
+                console.log(distance);
+                if (distance > 75) {
+                    this.manager.pop();
+                }
+            }
+
+            show() {
+                this.btn.addEventListener("click", this.transition);
+                this.btn2.addEventListener("click", this.reset);
+                this.timerId = window.setInterval(this.getDistance, 2000);
+                super.show();
+            }
+
+            hide() {
+                this.btn.removeEventListener("click", this.transition);
+                this.btn2.removeEventListener("click", this.reset);
+                window.clearInterval(this.timerId);
+                super.hide();
+            }
+
+            update(delta) {
+                text(this.minutes + ":" + this.seconds, width / 2, (height / 2) - 100);
+            }
+
+        }
+        class PauseState extends State {
+            constructor(manager) {
+                super("s2");
+                this.manager = manager;
+                this.btn = document.getElementById("s2--t");
+                this.btn2 = document.getElementById("s2--s");
+            }
+
+            transition = () => {
+                this.manager.pop();
+            }
+
+            reset = () => {
+                this.manager.pop();
+                this.manager.pop();
+            }
+
+            show() {
+                this.btn.addEventListener("click", this.transition);
+                this.btn2.addEventListener("click", this.reset);
+                super.show();
+            }
+
+            hide() {
+                this.btn.removeEventListener("click", this.transition);
+                this.btn2.removeEventListener("click", this.reset);
+                super.hide();
+            }
+
+        }
+        class RestState extends State {
+            constructor(manager, minutes, seconds) {
+                super("s3");
+                this.manager = manager;
+                this.btn = document.getElementById("s3--t");
+                this.btn2 = document.getElementById("s3--s");
+                this.minutes = minutes;
+                this.seconds = seconds;
+                this.timerId = undefined;
+            }
+            reset = () => {
+                this.manager.pop();
+            }
+
+            transition = () => {
+                this.manager.push(new PauseState(this.manager))
+            }
+
+            getDistance = async () => {
+                let distance = await getData();
+                console.log(distance);
+                if (distance < 100) {
+                    this.manager.push(new TimeToStandUpState(manager, this.minutes, this.seconds));
+                }
+            }
+
+            show() {
+                this.btn.addEventListener("click", this.transition);
+                this.btn2.addEventListener("click", this.reset);
+                this.timerId = window.setInterval(this.getDistance, 2000);
+                super.show();
+                sendData1(true);
+            }
+
+            hide() {
+                this.btn.removeEventListener("click", this.transition);
+                this.btn2.removeEventListener("click", this.reset);
+                window.clearInterval(this.timerId);
+                super.hide();
+                sendData1(false);
+            }
+
+            update(delta) {
+                text(this.minutes + ":" + this.seconds, width / 2, (height / 2) - 100);
+                if (frameCount % 60 == 0 && this.seconds > 0) {
+                    // if the frameCount is divisible by 60, then a second has passed. it will stop at 0
+                    this.seconds--;
+                }
+                if (this.seconds == 0 && this.minutes > 0) {
+                    this.minutes--;
+                    this.seconds = 59;
+                }
+                if (this.seconds == 0 && this.minutes == 0) {
+                    this.manager.popAndPush(new WorkoutState(this.manager, WORKOUT_MIN, WORKOUT_SEC))
+                    this.minutes = 5;
+                    this.seconds = 0;
+                }
+            }
+        }
+        class Manager {
+            constructor() {
+                this.states = []
+            }
+
+            push(state) {
+                if (this.states.length !== 0) {
+                    this.states[this.states.length - 1].hide();
+                }
+                state.show();
+                this.states.push(state);
+            }
+
+            pop() {
+                this.states[this.states.length - 1].hide();
+                this.states.pop();
+                this.states[this.states.length - 1].show();
+            }
+
+            popAndPush(state) {
+                this.pop();
+                this.push(state);
+            }
+
+            update(delta) {
+                if (this.states.length !== 0) {
+                    this.states[this.states.length - 1].update(delta)
+                }
+            }
+        }
+
+        var manager = new Manager();
+        manager.push(new StartState(manager));
+
+        let counter = 0;
+
+        const WORKOUT_MIN = 0
+        const WORKOUT_SEC = 11
+
+        const REST_MIN = 0
+        const REST_SEC = 9
+
+        var data1;
+        var data2;
+
+        var url =
+            'https://api.thinger.io/v3/users/ValeriiaZub/devices/esp8266/resources/SONIC?authorization=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJlc3A4MjY2IiwiaWF0IjoxNjE1ODIyNDA0LCJqdGkiOiI2MDRmN2U0NDg2MTAwNzdmZjkwOTNmNjkiLCJzdnIiOiJ1cy1lYXN0LmF3cy50aGluZ2VyLmlvIiwidXNyIjoiVmFsZXJpaWFadWIifQ.M6SakLBYbmMK4FFRAjRG_JmZ1xye-Lj9Sm8J0_AtA0g';
+
+        var url1 =
+            'https://api.thinger.io/v3/users/ValeriiaZub/devices/esp8266/resources/led1?authorization=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJEYXNoYm9hcmRfdGVzdDFfMkxlZHMiLCJ1c3IiOiJWYWxlcmlpYVp1YiJ9.ky6XikQMbs9JhEgVDk8bOkpKDO6aialeY821ojxWK0w';
+
+        var url2 =
+            'https://api.thinger.io/v3/users/ValeriiaZub/devices/esp8266/resources/led2?authorization=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJEYXNoYm9hcmRfdGVzdDFfMkxlZHMiLCJ1c3IiOiJWYWxlcmlpYVp1YiJ9.ky6XikQMbs9JhEgVDk8bOkpKDO6aialeY821ojxWK0w';
+
+        var Auth =
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJEYXNoYm9hcmRfdGVzdDFfMkxlZHMiLCJ1c3IiOiJWYWxlcmlpYVp1YiJ9.ky6XikQMbs9JhEgVDk8bOkpKDO6aialeY821ojxWK0w";
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+        }
+
+        function draw() {
+            background(240);
+            textAlign(CENTER, CENTER);
+            textSize(100);
+            manager.update(deltaTime);
+
+        }
+
+        async function getData() {
+            let response = await fetch(url);
+            return await response.json();
+            // httpGet(url, 'json', function (response) {
+            //     return response;
+            // });
+        }
+
+        function sendData1(data1) {
+            let postData = {
+                method: "POST",
+                Headers: {
+                    'Content-Type': "application/json;charset=UTF-8",
+                    'Authorization': Auth,
+                    'Accept': "application/json, text/plain, */*"
+                },
+
+                "in": data1
+            };
+            httpPost(url1, 'application/json', postData, function (result) {
+                console.log(postData);
+            });
+        }
+
+        function sendData2(data2) {
+            let postData = {
+                method: "POST",
+                Headers: {
+                    'Content-Type': "application/json;charset=UTF-8",
+                    'Authorization': Auth,
+                    'Accept': "application/json, text/plain, */*"
+                },
+
+                "in": data2
+            };
+            httpPost(url2, 'application/json', postData, function (result) {
+                console.log(postData);
+            });
+        }
+    </script>
+
+
+</body>
+
+</html>
